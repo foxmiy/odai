@@ -43,9 +43,9 @@ $ARGUMENTS
 
 ## 总原则
 
-1. 单一入口，内部路由：用户任务对外只认 `odai`；对内按任务阶段、目标和边界读取对应模块资源。需要 `harness-dev`、`feature-plan`、`review-sslb` 等能力时，不调用外部同名 skill，而是读取本 skill 内的模块文件。
+1. 单一入口，内部路由：用户任务对外只认 `odai`；对内按任务阶段、目标和边界读取对应模块资源。需要 `harness-dev`、`feature-plan`、`review-sslb` 等能力时，不调用外部同名 skill，而是读取本 skill 内的模块文件。非同名的外部专项技能按 `odai/references/dao/external-skills.md` 的借力规则处理：命中内部领域 playbook 场景时读取该文件，按字面命中判定，拿不准一律用内部。
 2. `道` 统一裁决：默认先读 `odai/references/modules/dao.md`（对外称 `道`），由它根据用户语义和想法判断走哪个模块、产出什么形态；不得跳过 `道` 直接按表层关键词路由。用户明确点名模块且指定了任务对象时（如“按 review-sslb 审这个 diff”、“用 ribao 整理 commit message”），可直接落到目标模块，由模块内交互契约兜底；`道` 不为此类直达任务额外补问。「轻量门」命中并经用户确认轻量的任务，按该节轻量路径执行，不读 `道`。进入任一模块时（含直达），首轮回复先输出一行「路由：`<模块>`｜依据：『用户原话关键词』」；依据须能从用户原话逐字引出，引不出即说明路由仍是猜测，先回到 `道` 重判。
-3. 全局硬法唯一来源：提问确认、动作类型判定、实施准入、统一术语、结果总结层级与真实性约束，一律按 `odai/references/dao/interaction-contract.md` 执行，不自行发明近义口径。轻量直行只判下一步动作，不判整个任务，判定口径按契约「先判动作类型」；不得凭“看起来简单”自判轻量，不得以“已读取足够信息”为由跳过确认。
+3. 全局硬法唯一来源：提问确认、动作类型判定、实施准入、统一术语、结果总结层级与真实性约束，一律按 `odai/references/dao/interaction-contract.md` 执行，不自行发明近义口径。契约「先判动作类型」的直行动作（与「轻量门」是两回事，前者管全量路径内能否先动手，后者管加载路径）只判下一步动作，不判整个任务；不得凭“看起来简单”自判直行或轻量，不得以“已读取足够信息”为由跳过确认。
 4. 确认后不中断：用户确认当前理解后，默认持续推进到可交付结果，不把阶段交接丢回给用户。“少说多做”指不铺陈哲学、不重复背景；不省略提问、不跳过确认。
 5. 清单输入：用户以 todolist、checklist 或多项列表给任务时，先判断它是临时题面、验收清单还是执行状态源；文件清单回写原处或指定主文件，聊天清单不改项目文件，只在收束给最小更新版。
 6. UI/UX/UE：不以“可用”为足；先判用户、场景、现有设计基线、信息密度、状态、响应式、资产约束与审美质量。审美升级或重设计须立标尺、复用清单和禁项，不以单张理想态截图冒充完成。
@@ -72,7 +72,7 @@ $ARGUMENTS
 
 1. 命中内部模块，或正文出现“调用 `harness-dev` / `game-plan` / `game-design` / `feature-plan` / `design-spec` / `implement-code` / `review-sslb`”等说法时，一律读取当前 skill 内对应模块继续，不调用外部同名 skill。
 2. `odai/references/...`、`odai/assets/...`、`scripts/...` 等相对路径一律以当前统一 skill 目录为根。
-3. 默认优先少切换：只有当前主模块不足以继续时，才切到相邻模块；切换前先说明当前判断。
+3. 默认优先少切换：只有当前主模块不足以继续时，才切到相邻模块；切换前先说明当前判断。必读触发与跨阶段链路完整性命中时按其执行，不算多余切换。
 4. 用户明确点名 `道` 或 `dao` 时都走同一总控模块；对外概念文案统一写 `道`，模块 id 与文件名保持 `dao`。
 5. 开发类需求接单、实现问题诊断、方案评审、阶段切换、执行判定、清单回写与继续推进，优先读取 `odai/references/modules/harness-dev.md`；用户已用原话锁定动作、对象与边界的指定实现，按 `道` 前置判断直达 `implement-code`，不经 `harness-dev`。UI 视觉提质：游戏 UI/UX/UE（HUD、菜单、背包、商城、编队、战斗界面等）读 `odai/references/game-design/uiuxue-visual-playbook.md` 与 `odai/references/game-design/aesthetic-benchmark.md`；通用产品 UI 读 `odai/references/design-spec/ui-visual-playbook.md` 与 `odai/references/design-spec/aesthetic-benchmark.md`。
 
