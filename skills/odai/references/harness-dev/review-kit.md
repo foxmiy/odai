@@ -76,6 +76,8 @@
 
 若证据不足以支撑“严重”，宁可降为“建议”或“留中待问”，不要硬判。
 
+本轮任务是连续 N 轮 clean、全仓 / 全目录复查、安全 audit 或长修复后反复验证到无缺陷时，不在 workflow 内自拟收敛口径，交 `review-sslb` 并按其 `references/review-sslb/audit-loop.md` 的缺陷分级收敛门、clean round 计数与 subagent 回路边界执行。
+
 ## 三省六部速记
 
 本速记是 `review-sslb` 的浓缩副本，仅用于 workflow 内部复核；正式审查或对外输出审查结论时以 `review-sslb` 全文为准，冲突以后者为准。
