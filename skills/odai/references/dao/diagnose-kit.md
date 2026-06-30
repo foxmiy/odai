@@ -2,7 +2,7 @@
 
 ## 何时读取
 
-由 `harness-dev`「何时必须读取 support files」触发：本轮任务进入 bug、异常、报错或性能回归的诊断（主阶段 = 诊断）时读取。本文件只补“硬 bug 诊断纪律”；证据账本与诊断起草结构（已确认现象、疑似原因、已有证据、缺失证据、最有价值排查动作）以 `references/harness-dev/review-kit.md` 为准，红-绿-重构与回归测试以 `references/modules/implement-code.md` 与 `references/implement-code/tdd-kit.md` 为准，不重复。
+由 `道`「何时必须读取 support files」触发：本轮任务进入 bug、异常、报错或性能回归的诊断（主阶段 = 诊断）时读取。本文件只补“硬 bug 诊断纪律”；证据账本与诊断起草结构（已确认现象、疑似原因、已有证据、缺失证据、最有价值排查动作）以 `references/dao/review-kit.md` 为准，红-绿-重构与回归测试以 `references/modules/implement-code.md` 与 `references/implement-code/tdd-kit.md` 为准，不重复。
 
 诊断属法层先手：先定“如何验证、何时止损”，再谈根因。下面这条铁律是法层先手在调试场景的具体化。
 
@@ -45,4 +45,4 @@
 
 ## 收口
 
-回到 `review-kit` 诊断起草结构与 `implement-code` 收尾审查门收口；额外确认：原始（未最小化）场景已不再复现、回归测试已落位（确无接缝就把“无接缝”本身记为发现）、带前缀探针已 grep 清净、最终成立的那条假设写进 commit / PR 供下一个人复用。
+回到 `references/dao/review-kit.md` 诊断起草结构与 `implement-code` 收尾审查门收口；额外确认：原始（未最小化）场景已不再复现、回归测试已落位（确无接缝就把“无接缝”本身记为发现）、带前缀探针已 grep 清净、最终成立的那条假设写进 commit / PR 供下一个人复用。

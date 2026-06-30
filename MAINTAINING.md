@@ -9,7 +9,7 @@ source-of-truth 全部在 `skills/` 下，没有任何多端镜像产物：
 ```text
 skills/odai/             统一入口 source skill
   SKILL.md               入口正文
-  references/modules/    内部模块正文（dao、harness-dev、game-* 等）
+  references/modules/    内部模块正文（dao、game-*、feature-plan 等）
   references/*/          模块级规则、说明等 support files
   assets/*/              模块级模板等资源
   scripts/*/             模块级脚本资源（按需）
@@ -32,7 +32,6 @@ plans/                   规划与测试记录（非分发内容）
 - `implement-*`：代码实现、补测试、落地总结
 - `project-*`：项目级说明、规则、基线、README 整理
 - `review-*`：代码审查
-- `harness-*`：偏开发推进的 workflow
 - `skill-*`：仓库维护工具，作为独立 skill 放在 `skills/<skill-name>/SKILL.md`
 
 补充：
@@ -77,8 +76,7 @@ plans/                   规划与测试记录（非分发内容）
 
 | 模块 | 作用 | 对应文件 |
 | --- | --- | --- |
-| `dao`（文案里写作 `道`） | 默认调度 workflow，负责方向、边界、主路、第一步与复核 | `skills/odai/references/modules/dao.md` |
-| `harness-dev` | 开发类调度 workflow，负责按 SDD / BDD / TDD 判断主驱动并持续推进 | `skills/odai/references/modules/harness-dev.md` |
+| `dao`（文案里写作 `道`） | 默认调度 workflow（通用总控，不分领域），负责方向、边界、主路、第一步与复核 | `skills/odai/references/modules/dao.md` |
 | `game-plan` | 全域游戏策划主模块：系统、玩法、数值、经济、商业、关卡与内容规划 | `skills/odai/references/modules/game-plan.md` |
 | `game-design` | 完整游戏视觉设计主模块：UI/UX/UE、角色场景、宣传品牌与特效演出 | `skills/odai/references/modules/game-design.md` |
 | `feature-plan` | 规格规划、方案取舍、bug 诊断 | `skills/odai/references/modules/feature-plan.md` |

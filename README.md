@@ -28,7 +28,7 @@ npx skills add https://github.com/orziz/odai --skill odai
 
 - "Use `odai` for this — decide which module fits, ask me if you're unsure."
 - "Use `odai` with `道` — pin down the boundaries and the main path first."
-- "Use `odai` with `harness-dev` and push all the way to a wrap-up."
+- "Use `odai` to take this all the way to a wrap-up — `道` routes it and won't stop half-done."
 - "Use `odai` with `review-sslb` to review this PR."
 - "Use `odai` with `ribao` to tidy up today's output."
 
@@ -38,7 +38,7 @@ Think of `odai` as a self-routing toolbox of skills:
 
 - **One door in.** You don't pick the skill. `道` decides whether this round needs a one-line judgment, a draft, a design mockup, a review verdict, an action list, or just getting hands dirty.
 - **A set of focused modules behind it.** Planning, design, review, coding, game design, game visuals, summaries — whatever the task needs.
-- **`道` is the default dispatcher.** For dev-heavy work, there's also a `harness-dev` route built to take it the whole way.
+- **`道` is the default dispatcher.** Whatever the domain, it picks the route and carries the task all the way to a wrap-up.
 
 A few things worth knowing up front:
 
@@ -88,10 +88,9 @@ When to reach for the `old` branch: you're still on the old entry point, you nee
 
 `odai` doesn't just run every module in sequence. `道` first works out which layer you're actually missing, which module to call, and what shape the output should take — then reads that module and keeps going.
 
-Two main routes inside:
+The one workflow inside:
 
-- **`道`** — the default dispatcher. Best for "lock in direction, boundaries, the main path, and the first step." It also picks the module and decides the output shape.
-- **`harness-dev`** — the outer workflow for dev work. Best for "take a dev request, diagnose it, decide how to push, then carry it all the way through."
+- **`道`** — the default dispatcher and the only general workflow. Best for "lock in direction, boundaries, the main path, and the first step." It also picks the module and decides the output shape, and carries any task — dev or not — through to a wrap-up.
 
 You can also skip the dispatcher and name a module directly:
 
@@ -108,7 +107,7 @@ A few handy triggers:
 
 - "Use `odai` for this request: decide the module and output shape, ask me when unsure."
 - "Use `odai`, start with `道` to pin down boundaries, the main path, and key risks, then push on."
-- "Use `odai` with `harness-dev` on this implementation problem, all the way to a wrap-up."
+- "Use `odai` on this implementation problem — `道` carries it all the way to a wrap-up."
 - "Use `odai` with `project-guide` to set the AI hand-off baseline for this repo."
 
 ## How it talks to you
