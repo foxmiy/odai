@@ -25,6 +25,8 @@
 
 失败测试 → curl / HTTP 脚本 → CLI + 夹具 / stdout diff → 无头浏览器断言 DOM / console / network → 回放 trace / payload → 最小子系统 harness → property / fuzz → `git bisect run` → 新旧版本或配置差分 → 人在环脚本。
 
+菜单里的 curl / CLI / 浏览器 / harness / HITL / fuzz 等临时脚本、夹具和输出默认不落用户项目；完整准入、cwd 与 tmp 处理按 `references/dao/interaction-contract.md` 的「临时产物规则」执行。
+
 有闭环后继续打磨：更快、更尖、更确定。偶发 bug 先循环、并行、加压、缩时窗、注 sleep；50% 可调，1% 不可调。
 
 ## 排查纪律

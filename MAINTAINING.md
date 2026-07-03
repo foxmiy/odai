@@ -13,6 +13,8 @@ skills/odai/             统一入口 source skill
   references/*/          模块级规则、说明等 support files
   assets/*/              模块级模板等资源
 skills/skill-author/     仓库 source 作者维护 skill
+plans/                   金丝雀测试口径与结果记录
+scripts/                 仓库维护与评测 harness
 assets/                  README 配图
 ```
 
@@ -40,13 +42,15 @@ assets/                  README 配图
 
 ## 维护流程
 
-内部模块正文只写自己这一域的职责、交付骨架、边界和 support file 的触发条件。入口、README、交互契约、术语基线这些全局规则已经定过的，模块正文优先引用，不要再拷一遍。
+内部模块正文只写自己这一域的职责、交付骨架、边界和 support file 的触发条件。入口、README、交互契约、术语基线这些全局规则已经定过的，模块正文优先引用，不要再拷一遍。全局判据默认采用指针式挂法：完整规则只铸在 canonical 文件，卫星模块只写触发场景和指向；确需重复判据时，改动必须 `rg` 全部副本并同步。
 
 推荐顺序：
 
 1. 用 `skill-author` 新增或改写 `skills/<skill-name>/SKILL.md`，或 `skills/odai/references/modules/<module-name>.md`。
 2. 需要时补 `skills/odai/references/<module-name>/`、`skills/odai/assets/<module-name>/`、`skills/odai/scripts/<module-name>/`。
 3. source 稳定后，分发交给 skills.sh（`npx skills add`）；canonical source 就是 `skills/` 本身，无需再生成任何安装产物。
+
+改入口、路由门、交互契约、实施准入、验收口径、agent 治理或 canary 用例后，至少先跑 `node scripts/odai-canary-harness.mjs --smoke` 检查 fixture / prompt 生成；规则小改且环境可用时跑 `node scripts/odai-canary-harness.mjs --smoke --run`，大改跑全量，并把日期、commit / 工作区状态、fail 条目和一句现象回写 `plans/odai-canary.md`。
 
 标准安装入口：
 
