@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import { spawnSync } from "node:child_process";
-import { cpSync, existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync, readFileSync } from "node:fs";
+import { cpSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import process from "node:process";
@@ -29,6 +29,84 @@ function writeText(file, text) {
 
 function readText(file) {
   return readFileSync(file, { encoding: "utf8" });
+}
+
+function estimateTokens(value) {
+  const text = String(value || "");
+  const cjkChars = (text.match(/[\u3000-\u303f\u3040-\u30ff\u3400-\u9fff\uf900-\ufaff\uff00-\uffef\uac00-\ud7af]/g) || []).length;
+  const otherChars = text.length - cjkChars;
+  return Math.ceil(cjkChars + otherChars / 4);
+}
+
+function listSkillMarkdown(root) {
+  const skillRoot = path.join(root, "skills", "odai");
+  const files = [];
+  function walk(dir) {
+    for (const entry of readdirSync(dir, { withFileTypes: true })) {
+      const fullPath = path.join(dir, entry.name);
+      if (entry.isDirectory()) {
+        walk(fullPath);
+      } else if (entry.isFile() && entry.name.endsWith(".md")) {
+        files.push(path.relative(skillRoot, fullPath).split(path.sep).join("/"));
+      }
+    }
+  }
+  walk(skillRoot);
+  return files.sort();
+}
+
+function buildSkillBudget(root) {
+  const skillRoot = path.join(root, "skills", "odai");
+  const files = listSkillMarkdown(root).map((relativePath) => {
+    const fullPath = path.join(skillRoot, relativePath);
+    const text = readText(fullPath);
+    return {
+      path: relativePath,
+      bytes: statSync(fullPath).size,
+      chars: text.length,
+      token_estimate: estimateTokens(text),
+    };
+  });
+  return {
+    files,
+    total_bytes: files.reduce((sum, item) => sum + item.bytes, 0),
+    total_chars: files.reduce((sum, item) => sum + item.chars, 0),
+    total_token_estimate: files.reduce((sum, item) => sum + item.token_estimate, 0),
+  };
+}
+
+function detectTrace(text, skillFiles = []) {
+  const value = String(text || "");
+  const supportFiles = new Set();
+  for (const match of value.matchAll(/(?:skills[\\/]+odai[\\/]+)?((?:references|assets)[\\/][^\s'"`<>)]*?\.(?:md|mjs|js))/g)) {
+    supportFiles.add(match[1].split("\\").join("/"));
+  }
+  for (const file of skillFiles) {
+    if (file !== "SKILL.md" && value.includes(file)) supportFiles.add(file);
+  }
+  const routes = [...value.matchAll(/路由：`?([^`｜\n]+)`?/g)].map((match) => match[1].trim());
+  const triggers = [...value.matchAll(/触发：`?([^`｜\n]+)`?/g)].map((match) => match[1].trim());
+  return {
+    routes: [...new Set(routes)],
+    triggers: [...new Set(triggers)],
+    support_files: [...supportFiles].sort(),
+    mentions_light_gate: value.includes("轻量证据门"),
+    mentions_direct_gate: value.includes("直达核对"),
+  };
+}
+
+function changedPathCount(status) {
+  return String(status || "")
+    .split(/\r?\n/)
+    .filter((line) => line.trim()).length;
+}
+
+function diffFileCount(diff) {
+  const files = new Set();
+  for (const match of String(diff || "").matchAll(/^diff --git a\/(.+?) b\/(.+)$/gm)) {
+    files.add(match[2]);
+  }
+  return files.size;
 }
 
 function parseArgs(argv) {
@@ -156,6 +234,12 @@ function replacePlaceholders(testCase) {
       "⟨B⟩": "180",
     },
     22: { "⟨现有行为⟩": "BookFlip 翻页过程中页面宽度保持 800px" },
+    24: {
+      "⟨现有组件 / 效果 / 文案参数⟩": "BookFlip 配置",
+      "⟨明确字段或数值⟩": "transitionMs",
+      "⟨A⟩": "220",
+      "⟨B⟩": "180",
+    },
   };
   let text = testCase.prompt;
   for (const [oldValue, newValue] of Object.entries({ ...generic, ...(perCase[testCase.id] || {}) })) {
@@ -468,7 +552,25 @@ function parseJudgeJson(file, fallback) {
   return null;
 }
 
-function runCase(root, outRoot, schemaPath, testCase, args) {
+function summarizeMetrics(results) {
+  const metrics = results.map((item) => item.metrics || {});
+  const sum = (key) => metrics.reduce((total, item) => total + (Number(item[key]) || 0), 0);
+  const max = (key) => metrics.reduce((current, item) => Math.max(current, Number(item[key]) || 0), 0);
+  return {
+    runner_prompt_chars: sum("runner_prompt_chars"),
+    runner_prompt_token_estimate: sum("runner_prompt_token_estimate"),
+    runner_transcript_chars: sum("runner_transcript_chars"),
+    runner_transcript_token_estimate: sum("runner_transcript_token_estimate"),
+    judge_prompt_chars: sum("judge_prompt_chars"),
+    judge_prompt_token_estimate: sum("judge_prompt_token_estimate"),
+    runner_duration_ms: sum("runner_duration_ms"),
+    judge_duration_ms: sum("judge_duration_ms"),
+    max_runner_transcript_chars: max("runner_transcript_chars"),
+    max_judge_prompt_chars: max("judge_prompt_chars"),
+  };
+}
+
+function runCase(root, outRoot, schemaPath, testCase, args, skillFiles) {
   const caseDir = path.join(outRoot, `C${String(testCase.id).padStart(2, "0")}`);
   createFixture(root, caseDir, testCase);
   const renderedPrompt = replacePlaceholders(testCase);
@@ -489,6 +591,22 @@ function runCase(root, outRoot, schemaPath, testCase, args) {
     judge_file: "",
     diff_file: "",
     status_file: "",
+    metrics: {
+      user_prompt_chars: renderedPrompt.length,
+      runner_prompt_chars: prompt.length,
+      runner_prompt_token_estimate: estimateTokens(prompt),
+      runner_transcript_chars: 0,
+      runner_transcript_token_estimate: 0,
+      last_message_chars: 0,
+      judge_prompt_chars: 0,
+      judge_prompt_token_estimate: 0,
+      runner_duration_ms: null,
+      judge_duration_ms: null,
+      diff_chars: 0,
+      diff_files: 0,
+      status_paths: 0,
+      trace: detectTrace(prompt, skillFiles),
+    },
   };
   if (!args.run) return result;
 
@@ -496,12 +614,19 @@ function runCase(root, outRoot, schemaPath, testCase, args) {
   const runner = args.runnerCmd
     ? formatTemplate(args.runnerCmd, { workdir: caseDir, prompt_file: promptFile, last_message: lastMessage, case_id: testCase.id })
     : defaultRunner(caseDir, lastMessage);
+  const runnerStartedAt = Date.now();
   const runnerResult = Array.isArray(runner)
     ? run(runner, { cwd: caseDir, input: prompt, timeoutSeconds: args.timeout })
     : runShell(runner, { cwd: caseDir, input: prompt, timeoutSeconds: args.timeout });
+  result.metrics.runner_duration_ms = Date.now() - runnerStartedAt;
   const timedOut = runnerResult.error && runnerResult.error.code === "ETIMEDOUT";
   let transcript = `${runnerResult.stdout || ""}${runnerResult.stderr || ""}`;
-  if (existsSync(lastMessage)) transcript += `\n\n[LAST MESSAGE]\n${readText(lastMessage)}`;
+  const lastMessageText = existsSync(lastMessage) ? readText(lastMessage) : "";
+  if (lastMessageText) transcript += `\n\n[LAST MESSAGE]\n${lastMessageText}`;
+  result.metrics.runner_transcript_chars = transcript.length;
+  result.metrics.runner_transcript_token_estimate = estimateTokens(transcript);
+  result.metrics.last_message_chars = lastMessageText.length;
+  result.metrics.trace = detectTrace(transcript, skillFiles);
   const transcriptFile = path.join(caseDir, "runner.log");
   writeText(transcriptFile, transcript);
   result.runner_exit = timedOut ? null : runnerResult.status;
@@ -515,11 +640,14 @@ function runCase(root, outRoot, schemaPath, testCase, args) {
   const diffFile = path.join(caseDir, "diff.patch");
   writeText(diffFile, diff);
   result.diff_file = diffFile;
+  result.metrics.diff_chars = diff.length;
+  result.metrics.diff_files = diffFileCount(diff);
 
   const status = gitStatus(caseDir);
   const statusFile = path.join(caseDir, "status.txt");
   writeText(statusFile, status);
   result.status_file = statusFile;
+  result.metrics.status_paths = changedPathCount(status);
 
   if (runnerResult.status !== 0) {
     result.status = "runner-failed";
@@ -532,14 +660,18 @@ function runCase(root, outRoot, schemaPath, testCase, args) {
   }
 
   const judgePrompt = buildJudgePrompt(testCase, renderedPrompt, transcript, diff, status);
+  result.metrics.judge_prompt_chars = judgePrompt.length;
+  result.metrics.judge_prompt_token_estimate = estimateTokens(judgePrompt);
   const judgeOutput = path.join(caseDir, "judge.json");
   const judgeLog = path.join(caseDir, "judge.log");
   const judge = args.judgeCmd
     ? formatTemplate(args.judgeCmd, { workdir: caseDir, schema: schemaPath, judge_output: judgeOutput, case_id: testCase.id })
     : defaultJudge(caseDir, schemaPath, judgeOutput);
+  const judgeStartedAt = Date.now();
   const judgeResult = Array.isArray(judge)
     ? run(judge, { cwd: caseDir, input: judgePrompt, timeoutSeconds: args.judgeTimeout })
     : runShell(judge, { cwd: caseDir, input: judgePrompt, timeoutSeconds: args.judgeTimeout });
+  result.metrics.judge_duration_ms = Date.now() - judgeStartedAt;
   writeText(judgeLog, `${judgeResult.stdout || ""}${judgeResult.stderr || ""}`);
   result.judge_exit = judgeResult.status;
   result.judge_file = existsSync(judgeOutput) ? judgeOutput : judgeLog;
@@ -555,13 +687,16 @@ function runCase(root, outRoot, schemaPath, testCase, args) {
   return result;
 }
 
-function writeReport(outRoot, results, dryRun) {
+function writeReport(outRoot, results, dryRun, skillBudget) {
+  const metrics = summarizeMetrics(results);
   const report = {
     generated_at: new Date().toISOString(),
     mode: dryRun ? "dry-run" : "run",
     total: results.length,
     pass: results.filter((item) => item.status === "pass").length,
     fail: results.filter((item) => item.status === "fail").length,
+    metrics,
+    skill_budget: skillBudget,
     results,
   };
   writeText(path.join(outRoot, "report.json"), JSON.stringify(report, null, 2));
@@ -572,13 +707,21 @@ function writeReport(outRoot, results, dryRun) {
     `- total: ${report.total}`,
     `- pass: ${report.pass}`,
     `- fail: ${report.fail}`,
+    `- runner prompt est. tokens: ${metrics.runner_prompt_token_estimate}`,
+    `- runner transcript est. tokens: ${metrics.runner_transcript_token_estimate}`,
+    `- judge prompt est. tokens: ${metrics.judge_prompt_token_estimate}`,
+    `- skill markdown est. tokens: ${skillBudget.total_token_estimate}`,
     "",
-    "| case | status | reason |",
-    "|---|---|---|",
+    "| case | status | prompt tok est | transcript tok est | support refs | diff files | status paths | reason |",
+    "|---|---|---:|---:|---:|---:|---:|---|",
   ];
   for (const item of results) {
     const reason = String(item.reason || "").replace(/\|/g, "/").replace(/\r?\n/g, " ");
-    lines.push(`| C${String(item.case_id).padStart(2, "0")} | ${item.status} | ${reason} |`);
+    const itemMetrics = item.metrics || {};
+    const trace = itemMetrics.trace || {};
+    lines.push(
+      `| C${String(item.case_id).padStart(2, "0")} | ${item.status} | ${itemMetrics.runner_prompt_token_estimate || 0} | ${itemMetrics.runner_transcript_token_estimate || 0} | ${(trace.support_files || []).length} | ${itemMetrics.diff_files || 0} | ${itemMetrics.status_paths || 0} | ${reason} |`,
+    );
   }
   writeText(path.join(outRoot, "report.md"), `${lines.join("\n")}\n`);
 }
@@ -589,6 +732,8 @@ function main() {
   const planPath = path.resolve(root, args.plan);
   const allCases = parseCanary(planPath);
   const selected = selectCases(allCases, args);
+  const skillFiles = listSkillMarkdown(root);
+  const skillBudget = buildSkillBudget(root);
   if (selected.length === 0) {
     console.error("No cases selected.");
     return 2;
@@ -606,6 +751,7 @@ function main() {
         selected_cases: selected.map((item) => item.id),
         run: args.run,
         judge: args.run && !args.noJudge,
+        skill_markdown_token_estimate: skillBudget.total_token_estimate,
       },
       null,
       2,
@@ -615,9 +761,9 @@ function main() {
   const results = [];
   for (const testCase of selected) {
     console.log(`C${String(testCase.id).padStart(2, "0")}: preparing${args.run ? " and running" : ""}`);
-    results.push(runCase(root, outRoot, schemaPath, testCase, args));
+    results.push(runCase(root, outRoot, schemaPath, testCase, args, skillFiles));
   }
-  writeReport(outRoot, results, !args.run);
+  writeReport(outRoot, results, !args.run, skillBudget);
   console.log(`Output: ${outRoot}`);
   console.log(`Report: ${path.join(outRoot, "report.md")}`);
 
