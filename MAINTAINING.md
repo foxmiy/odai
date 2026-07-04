@@ -44,6 +44,8 @@ assets/                  README 配图
 
 内部模块正文只写自己这一域的职责、交付骨架、边界和 support file 的触发条件。入口、README、交互契约、术语基线这些全局规则已经定过的，模块正文优先引用，不要再拷一遍。全局判据默认采用指针式挂法：完整规则只铸在 canonical 文件，卫星模块只写触发场景和指向；确需重复判据时，改动必须 `rg` 全部副本并同步。
 
+规则增长纪律的 owner 是 `skills/skill-author/SKILL.md` 的「规则增长纪律」；维护本仓库 source 时按该节执行，本文不另写扩展条件。
+
 推荐顺序：
 
 1. 用 `skill-author` 新增或改写 `skills/<skill-name>/SKILL.md`，或 `skills/odai/references/modules/<module-name>.md`。
@@ -63,7 +65,7 @@ assets/                  README 配图
 
 | Skill | 简介 | 适用场景 | 对应文件 |
 | --- | --- | --- | --- |
-| `odai` | 以道为总控，提供意图对齐、边界授权、验收真实性、跨阶段接力、agent 治理和专家 playbook 的统一入口 | 复杂任务接单、方向裁决、规格规划、游戏策划、游戏视觉设计、设计说明、代码实现、代码审查、agent 下放与成果整理 | `skills/odai/SKILL.md` |
+| `odai` | 以道为总控，提供意图对齐、边界授权、验收真实性、跨阶段接力、agent 治理和领域 playbook 的统一入口 | 复杂任务接单、方向裁决、规格规划、游戏策划、游戏视觉设计、设计说明、代码实现、代码审查、agent 下放与成果整理 | `skills/odai/SKILL.md` |
 
 ### 仓库维护工具
 
