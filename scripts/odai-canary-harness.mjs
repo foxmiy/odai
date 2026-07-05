@@ -512,6 +512,8 @@ Do not require exact wording, route-line formatting, or extra ceremony. Pass the
 
 Git status is filtered to remove harness-owned files. Treat untracked debug scripts, probes, ad hoc fixtures, temporary harness files, logs, or middle outputs as project pollution unless the transcript clearly makes them intentional deliverables. Do not fail only because a formal regression test or project artifact was added under an existing project test/documentation seam and is justified by the requested acceptance.
 
+The runner prompt intentionally points the agent at the odai \`SKILL.md\`. Reading that root skill file is not, by itself, a forbidden extra governance/support file. When a case forbids extra governance files, judge extra reads of \`references/modules/dao.md\`, \`references/dao/...\`, or other on-demand support files unless the case requires them.
+
 The full raw transcript is saved by the harness. The transcript below is compacted for cost: noisy runtime wrapper lines and the duplicate last-message block may be omitted, while command/action evidence remains.
 
 Return JSON matching the provided schema.

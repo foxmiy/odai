@@ -3,7 +3,7 @@
 ## 何时读取
 
 - `review-sslb` 的可选重型子流程：任务要求“连续 N 轮 clean”“全仓 / 全目录复查”“安全 audit”“长修复后反复验证到无缺陷”时读取；普通单轮 diff 审查不读，默认仍走 `review-sslb` 单流程。
-- 由当前主审 agent（`review-sslb` 主流程）按命中读取并主控；读取时外显一行「触发：`audit-loop`｜条件：『<原话关键词>』」，写不出条件即未命中。
+- 由当前主审 agent（`review-sslb` 主流程）按命中读取并主控；写不出命中条件即未命中。
 - 本文件叠加在 `references/dao/decision-challenge.md` 与 `references/dao/agent-governance.md`「子 agent 通用边界」「执行下放」之上，只补长回路特有的**缺陷分级收敛门**与 **subagent exit 权威**；确认与实施准入仍以交互契约为准。
 
 ## 缺陷分级与收敛门
