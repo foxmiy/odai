@@ -3,173 +3,161 @@
 
 # odai
 
-`odai` is a single governance entry point for AI agent work. It does not try to teach the model generic reasoning, searching, reading, coding, or summarizing again; it defines the parts an agent should not decide alone: real intent, boundaries, authorization, acceptance, handoffs, evidence, and stopping conditions.
+`odai` is a single governance entry point for AI agent work.
 
-Inside, `道` ("the Way") acts as the orchestrator. It aligns the goal and risk, chooses the module chain when needed, lets simple tasks move quickly, and asks only when a missing decision would change the path, scope, authorization, acceptance, risk, or stop line.
+It does not try to reteach a model how to reason, search, read, code, or summarize. Instead, it defines the parts an agent should not quietly decide alone: real intent, boundaries, authorization, acceptance, evidence, handoffs, agent delegation, and stop conditions.
 
-- **Just want to get stuff done?** One entry point: `odai`.
-- **Maintaining this repo?** There's a separate `skill-author` tool. See [MAINTAINING.md](MAINTAINING.md).
+The short version: you call `/odai`; simple work stays simple, and ambiguous or high-impact work is routed through `道` ("the Way") before the agent acts.
 
-> The `main` branch ships this unified entry point. If you prefer the older "one skill per ability" layout, install the `old` branch (see [Install](#install)).
+## Why Use It
 
-## 30-second start
+`odai` is for people who want agents to move with autonomy, but not with false confidence.
 
-1. Drop `odai` into your environment:
+It helps an agent:
 
-```bash
-npx skills add https://github.com/orziz/odai --skill odai
-```
+- ask only when the missing answer would change the goal, scope, authorization, acceptance, risk, or stop line
+- verify what it can verify from files, commands, logs, tests, or project context before asking you
+- keep lightweight tasks lightweight instead of turning every request into ceremony
+- avoid claiming that something was tested, delegated, reviewed, or verified when it was not
+- load specialist guidance only when the task needs it, instead of stuffing every rule into every turn
 
-(Want the whole repo, the slim version, or the old layout? See [Install](#install).)
+## 30-Second Start
 
-2. Hand your task straight to `odai`. In your first message, try to include three things: **the goal** (what you want), **the materials** (what you've got), and **the constraints** (what's off-limits, what's required). Not sure which module fits? Don't worry — `道` figures that out first.
-
-3. Already know the route you want? Just name it:
-
-- "Use `odai` for this — decide which module fits, ask me if you're unsure."
-- "Use `odai` with `道` — pin down the boundaries and the main path first."
-- "Use `odai` to take this all the way to a wrap-up — `道` routes it and won't stop half-done."
-- "Use `odai` with `review-sslb` to review this PR."
-- "Use `odai` with `ribao` to tidy up today's output."
-
-## What is this, really
-
-Think of `odai` as a governance layer over strong models and agents:
-
-- **One door in.** User tasks enter through `odai`; direct, lightweight tasks stay light, and ambiguous or cross-domain work goes through `道`.
-- **Hard lines where autonomy is risky.** The skill guards intent alignment, scope, authorization, acceptance, truthfulness, handoffs, and evidence.
-- **Focused modules behind it.** Planning, design, review, coding, game design, game visuals, summaries, and project guidance are loaded only when the task actually needs them.
-- **Agents stay subordinate.** Sub-agents can generate candidates, evidence, reviews, or frozen-scope work; the main flow verifies and adopts only what can be checked.
-
-A few things worth knowing up front:
-
-- For actual work, there's just one entry point: `odai`. Maintaining the repo uses a separate tool, `skill-author`.
-- Distribution goes through the [skills.sh](https://skills.sh) standard (`npx skills add`). The canonical source lives under `skills/` — there are no per-platform mirror copies anymore.
-- The old "many skills side by side" layout moved to the `old` branch; install it separately if you still need it.
-
-## Who it's for
-
-If any of these sound like you, this repo will feel at home:
-
-- You want one entry point that keeps agent work aligned without turning every task into a rigid process.
-- You want the AI to move autonomously on facts it can verify, but ask before it crosses scope, authorization, acceptance, or risk boundaries.
-- You like having `道` lock in direction, boundaries, the main path, and the first step when the task is ambiguous or high-impact.
-- You want review, diagnosis, TDD, UI quality, game planning, and agent delegation rules available without loading them on every request.
-- You regularly tidy up READMEs, project rules, AI hand-off notes, or daily reports / commits / PR descriptions.
-- You want to wire the entry point into any agent with a single skills.sh command instead of copying files by hand.
-
-## Install
-
-### The easy way
-
-Just the unified entry point (most people want this):
+Install the unified entry point:
 
 ```bash
 npx skills add https://github.com/orziz/odai --skill odai
 ```
 
-Good when you want the entry point wired in fast, don't want to copy files around, and plan to trigger the inner modules through `odai`.
+Then invoke it with `/odai`. That is the normal form in clients that expose skills as slash commands:
 
-Other ways, pick as needed:
+```text
+/odai update the onboarding flow copy.
+Goal: make it clearer for first-time users.
+Materials: current app files and README.
+Constraints: do not change behavior yet; give me the proposed copy and risks first.
+```
+
+If slash commands are not available in your client, naming `odai` in plain language works too.
+
+You do not need to know the internal modules. If the route is obvious, `odai` goes straight there. If the task is vague, cross-domain, risky, or user-facing, `道` aligns the direction, boundary, acceptance standard, and next step first.
+
+## How It Decides
+
+`odai` has one public door and several internal routes:
+
+- **Lightweight**: read, explain, summarize, inspect, run an existing command, or make a tiny named text edit when the object and verification are obvious.
+- **Direct**: go straight to a named or clearly implied module, such as code review, README work, implementation, game planning, or daily-report cleanup.
+- **Dao-led**: use `道` when the task is ambiguous, multi-step, risky, user-visible, or likely to need scope and acceptance alignment.
+- **Enhanced**: use stricter challenge, agent governance, or consensus rules when the user asks for multi-agent / multi-model work, or when a decision is expensive to reverse.
+
+The point is not to slow the agent down. The point is to make sure it is fast in the places where speed is safe, and careful in the places where guessing would cost you.
+
+## Architecture Logic
+
+```text
+                         user task
+                            |
+                            v
+       +--------------------------------------------+
+       | /odai -> SKILL.md                         |
+       | entry routing, truth gates, scope gates     |
+       +--------------------+-----------------------+
+            direct / light  | ambiguous / risky / cross-domain
+       +--------------------+-----------------------+
+       |                                            |
+       v                                            v
+  +------------------+                 +-------------------------+
+  | named module     |                 | dao / 道 orchestrator   |
+  | or light action  |                 | why -> how -> do        |
+  +---------+--------+                 +-----------+-------------+
+            |                                      |
+            |                                      v
+            |                         +--------------------------+
+            |                         | specialist module chain  |
+            |                         | plan / design / code /   |
+            |                         | review / game / summary  |
+            |                         +-----------+--------------+
+            |                                      |
+            +----------------------+---------------+
+                                   v
+                         result, evidence,
+                         verified gap, or blocker
+
+Support files are loaded only when needed:
+interaction contract, diagnosis, result reporting,
+agent governance, challenge / consensus rules,
+and domain playbooks.
+```
+
+The important part is the split before action: if the task is already bounded, `odai` can move directly; if the task needs intent, scope, acceptance, risk, or authorization alignment, `道` sets the track first and then hands work to the right producer modules.
+
+## Module Map
+
+These are internal modules. You can name them directly, but you usually do not have to.
+
+| Module | Use it for |
+| --- | --- |
+| `dao` / `道` | Default orchestration, direction, boundaries, route choice, cross-stage handoff |
+| `feature-plan` | Specs, tradeoffs, feature planning, bug diagnosis |
+| `design-spec` | Product flows, pages, states, interaction, UX acceptance |
+| `implement-code` | Code changes, bug fixes, tests, refactors after scope is clear |
+| `review-sslb` | Structured code review |
+| `project-guide` | READMEs, project rules, AI handoff baselines |
+| `game-plan` | Game systems, mechanics, numbers, economy, levels, liveops |
+| `game-design` | Game visuals, UI/UX/UE, characters, scenes, branding, FX |
+| `ribao` | Daily reports, commit messages, PR messages |
+
+## Good Prompts
+
+Use the level of detail you actually have:
+
+```text
+/odai handle this. Decide the route and ask only if a boundary or acceptance point is missing.
+```
+
+```text
+/odai review-sslb review the current diff.
+```
+
+```text
+/odai project-guide refresh this repository README. Remove outdated screenshots and keep the install path clear.
+```
+
+```text
+/odai start with 道. The task is user-facing and I care about not changing behavior without approval.
+```
+
+## Install Options
+
+Most users only need the unified entry point:
 
 ```bash
-# Install the other skills in the repo too
+npx skills add https://github.com/orziz/odai --skill odai
+```
+
+Other supported installs:
+
+```bash
+# Install every skill in this repository
 npx skills add https://github.com/orziz/odai
 
-# Slimmer, lower-token version (mini branch)
+# Install the slimmer branch
 npx skills add https://github.com/orziz/odai#mini
 
-# The old "many skills side by side" layout (old branch)
+# Install the older "one skill per ability" layout
 npx skills add https://github.com/orziz/odai#old
 ```
 
-When to reach for the `old` branch: you're still on the old entry point, you need the standalone install for `harness-dev` / `harness-dao` and friends, or you're doing a side-by-side migration off the old structure.
+Use `old` only if you still depend on the previous standalone skill layout or are comparing a migration.
 
-## Architecture at a glance
-
-```text
-                         your task
-                             │
-                             ▼
-       ┌─────────────────────────────────────────┐
-       │  odai · SKILL.md  — entry routing         │
-       │  direct-hit · lightweight gate · …        │
-       └──────────────┬────────────────────────────┘
-         direct-hit    │   ambiguous · cross-domain · dev
-       ┌───────────────┘                 │
-       │                                 ▼
-       │                  ┌───────────────────────────┐
-       │                  │  道 (dao) — orchestrator    │
-       │                  │  道→术→法  (why→how→do)     │
-       │                  │  sets direction & track,    │
-       │                  │  supervises                 │
-       │                  └──────────────┬──────────────┘
-       │   defines the producer track,   │
-       │   carries forward (no bounce) ──┤
-       ▼                                 ▼
-   ┌────────────────────────────────────────────────────────┐
-   │  specialist modules (producers)                          │
-   │   feature-plan · design-spec · implement-code            │
-   │   game-plan · game-design · review-sslb                  │
-   │   project-guide · ribao                                  │
-   └────────────────────────────────────────────────────────┘
-
-   support files (道 loads on demand):
-     interaction-contract (hard law) · dao-shu-fa-playbook
-     review-kit · diagnose-kit · agent-governance · result-reporting
-     consensus-mode · external-skills
-```
-
-`道术法` (dao-shu-fa) are **phases of the work** — why → how → do —
-that every task flows through; they are not labels stamped on modules.
-A task enters once through `odai`; simple ones hit a module directly,
-the rest go to `道`, which sets the track and carries them to a wrap-up.
-
-## Getting more out of `odai`
-
-`odai` doesn't run every module in sequence. It first checks whether the task can stay direct or lightweight; if not, `道` works out which layer is missing, which module to call, and what shape the output should take.
-
-The one workflow inside:
-
-- **`道`** — the default orchestrator and the only general workflow. Best for "lock in direction, boundaries, the main path, and the first step." It also picks the module chain and keeps the task moving until there is a result, verified gap, or real blocker.
-
-You can also skip `道` for a single clear segment and name a module directly:
-
-- `game-plan` — game systems, mechanics, numbers, economy, monetization, levels and content
-- `game-design` — full game visuals: UI/UX/UE, characters and scenes, branding, FX and cinematics
-- `feature-plan` — writing specs, weighing options, diagnosing bugs
-- `design-spec` — pages, interactions, states, visuals, experience notes
-- `implement-code` — writing code, fixing bugs, adding tests, refactors once the scope is clear
-- `project-guide` — READMEs, project rules, AI hand-off baselines
-- `review-sslb` — "three departments, six ministries" style code review (the old multi-style reviews all merged into this one)
-- `ribao` — daily reports, commit messages, PR messages
-
-A few handy triggers:
-
-- "Use `odai` for this request: decide the module and output shape, ask me when unsure."
-- "Use `odai`, start with `道` to pin down boundaries, the main path, and key risks, then push on."
-- "Use `odai` on this implementation problem — `道` carries it all the way to a wrap-up."
-- "Use `odai` with `project-guide` to set the AI hand-off baseline for this repo."
-
-## How it talks to you
-
-The modules that ask for missing details follow one interaction contract (`skills/odai/references/dao/interaction-contract.md`):
-
-- It first tries to read, check, or run low-risk verification itself.
-- It asks only for decisions that affect goal, boundary, authorization, acceptance, risk, stop line, or unacceptable outcomes.
-- It keeps unverified claims separate from confirmed facts, and it does not report files, agents, commands, or validation it did not actually use.
-- Once you answer, it continues with the current step by default — no need to add a "go on."
-
-## Showcase
-
-![Showcase 1](./assets/image_0.png)
-![Showcase 2](./assets/image_1.png)
+Canonical source lives in `skills/`. Distribution is handled through the [skills.sh](https://skills.sh) install flow; this repository no longer keeps per-platform mirror outputs. Maintainer notes live in [MAINTAINING.md](MAINTAINING.md).
 
 ## Credits
 
-Some of the naming, structure, and format ideas borrowed from these projects — thanks to all of them:
+Some naming, structure, and workflow ideas were inspired by:
 
 - [cft0808/edict](https://github.com/cft0808/edict)
 - [wanikua/danghuangshang](https://github.com/wanikua/danghuangshang)
 
-Stars are welcome, and so are PRs — come help add better skills and workflows.
+Stars and PRs are welcome.
